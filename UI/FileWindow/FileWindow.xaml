@@ -1,20 +1,28 @@
-﻿<Window x:Class="UI.FileWindow.FileWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:UI"
-        xmlns:pu="clr-namespace:Panuon.UI.Silver;assembly=Panuon.UI.Silver"
-        mc:Ignorable="d"
-        Title="文件管理">
+﻿<pu:WindowX x:Class="UI.FileWindow.FileWindow"
+            xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+            xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+            xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+            xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+            xmlns:local="clr-namespace:UI.FileWindow"
+            xmlns:sys="clr-namespace:System;assembly=mscorlib"
+            xmlns:pu="clr-namespace:Panuon.UI.Silver;assembly=Panuon.UI.Silver"
+            d:DataContext="{d:DesignInstance Type=local:FileWinVM}"
+            mc:Ignorable="d"
+            Title="文件管理"
+            WindowStartupLocation="CenterScreen"
+            pu:WindowXCaption.Padding="10,0,0,0"
+            pu:WindowXCaption.Background="#f2f2f2">
+
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="50" />
+            <RowDefinition Height="40" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
         <!-- Tool Bar -->
-        <Grid Grid.Row="0">
+        <Grid Grid.Row="0"
+              Background="#f2f2f2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
@@ -22,95 +30,302 @@
                 <ColumnDefinition Width="300" />
             </Grid.ColumnDefinitions>
 
-            <!-- Home Button -->
-            <Button Grid.Column="0"
-                    BorderThickness="0"
-                    Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
-                <Image Source="../Icon/home.jpg" />
-            </Button>
+            <Grid.Resources>
+                <Thickness x:Key="ToolbarItemMargin">4,4,4,4</Thickness>
+            </Grid.Resources>
 
             <!-- Refresh Button -->
+            <Button Grid.Column="0"
+                    Name="refreshBtn"
+                    Margin="{StaticResource ToolbarItemMargin}"
+                    Click="RefreshBtn_Click"
+                    Background="Transparent"
+                    pu:ButtonHelper.HoverBrush="LightGray"
+                    pu:ButtonHelper.CornerRadius="4">
+                <Image Source="../Image/refresh-in-filewin.png" />
+            </Button>
+
+            <!-- Add File Button -->
+            <Button Grid.Column="1"
+                    Name="addFileBtn"
+                    Margin="{StaticResource ToolbarItemMargin}"
+                    Click="AddFileBtn_Click"
+                    Background="Transparent"
+                    pu:ButtonHelper.HoverBrush="LightGray"
+                    pu:ButtonHelper.CornerRadius="4">
+                <Image Source="../Image/add-in-filewin.png" />
+            </Button>
 
             <!-- Tag Search Box -->
             <TextBox Grid.Column="2"
-                     x:Name="tagSearchBox" />
+                     x:Name="tagSearchBox"
+                     Margin="{StaticResource ToolbarItemMargin}"
+                     Text="{Binding TagSearchText}"
+                     Padding="4,2,5,2"
+                     VerticalContentAlignment="Center"
+                     FontSize="14"
+                     pu:TextBoxHelper.CornerRadius="4"
+                     pu:TextBoxHelper.FocusedBorderBrush="DodgerBlue"
+                     pu:TextBoxHelper.FocusedShadowColor="Transparent"
+                     pu:TextBoxHelper.Watermark="输入查询表达式并按回车"
+                     PreviewKeyDown="TagSearchBox_PreviewKeyDown"
+                     PreviewTextInput="TagSearchBox_PreviewTextInput"
+                     TextChanged="TagSearchBox_TextChanged" />
+
+            <!-- 弹出提示 -->
+            <Popup x:Name="intelliPopup"
+                   PlacementTarget="{Binding ElementName=tagSearchBox}"
+                   Placement="Bottom"
+                   IsOpen="False"
+                   StaysOpen="False">
+                <ListBox x:Name="intelliLst"
+                         ItemsSource="{Binding IntelliItems}"
+                         pu:ListBoxHelper.SelectedBackground="#0077d7"
+                         pu:ListBoxHelper.SelectedForeground="White"
+                         KeyDown="IntelliLst_KeyDown"
+                         MouseDoubleClick="IntelliLst_MouseDoubleClick">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate DataType="{x:Type local:IntelliItem}">
+                            <TextBlock Text="{Binding Name}"
+                                       Padding="5,0,5,0" />
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Popup>
 
             <!-- Filename Search Box -->
             <TextBox Grid.Column="3"
-                     Name="filenameSearchBox" />
+                     Name="filenameSearchBox"
+                     Margin="4,4,8,4"
+                     Text="{Binding FilenameSearchText}"
+                     Padding="4,2,5,2"
+                     VerticalContentAlignment="Center"
+                     FontSize="14"
+                     pu:TextBoxHelper.CornerRadius="4"
+                     pu:TextBoxHelper.FocusedBorderBrush="DodgerBlue"
+                     pu:TextBoxHelper.FocusedShadowColor="Transparent"
+                     pu:TextBoxHelper.Watermark="输入文件名并按回车"
+                     PreviewKeyDown="FilenameSearchBox_PreviewKeyDown" />
+
         </Grid>
 
-        <!-- Main Part -->
-        <Grid Grid.Row="1">
+        <Separator Grid.Row="1"
+                   Margin="0"
+                   Background="LightGray"
+                   Visibility="Collapsed" />
+
+        <!-- Down Part -->
+        <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="200" />
+                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <!-- Left Part: Tree View -->
-            <TreeView Grid.Column="0"
-                      Background="AliceBlue"
-                      pu:TreeViewHelper.ItemHeight="30"
-                      pu:TreeViewHelper.SelectMode="ChildOnly">
-                <TreeViewItem Header="综合">
-                    <Label Content="●主页" />
-                    <Label Content="●搜索结果" />
+            <!-- Left Part: 左侧导航栏 -->
+            <StackPanel Grid.Column="0"
+                        Background="#f2f2f2">
+                <TextBlock Text="综合"
+                           FontWeight="Bold"
+                           Padding="10,5,10,5"
+                           FontSize="18" />
+                <ListView x:Name="upNavList"
+                          ItemsSource="{Binding UpNavItems}"
+                          SelectedValue="{Binding SelectedNavItem, Mode=TwoWay}"
+                          SelectionMode="Single"
+                          HorizontalAlignment="Stretch"
+                          HorizontalContentAlignment="Stretch"
+                          BorderThickness="0"
+                          Background="Transparent">
+                    <ListView.ItemTemplate>
+                        <DataTemplate DataType="{x:Type local:INavItem}">
+                            <TextBlock Text="{Binding Header}"
+                                       Padding="20,5,5,5"
+                                       FontSize="14" />
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="{x:Type ListViewItem}">
+                            <Style.Triggers>
+                                <Trigger Property="IsSelected"
+                                         Value="True">
+                                    <Setter Property="FontWeight"
+                                            Value="Bold" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ListView.ItemContainerStyle>
+                </ListView>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               Text="标签"
+                               FontWeight="Bold"
+                               Padding="10,5,10,5"
+                               FontSize="18" />
+                    <Button x:Name="addTagBtn"
+                            Grid.Column="1"
+                            Click="AddTagBtn_Click"
+                            Background="Transparent"
+                            VerticalAlignment="Center"
+                            Height="28"
+                            pu:ButtonHelper.HoverBrush="LightGray"
+                            pu:ButtonHelper.CornerRadius="4">
+                        <Image Source="../Image/add-in-filewin.png" />
+                    </Button>
+                </Grid>
+                <ListView x:Name="downNavList"
+                          ItemsSource="{Binding DownNavItems}"
+                          SelectedValue="{Binding SelectedNavItem, Mode=TwoWay}"
+                          SelectionMode="Single"
+                          HorizontalAlignment="Stretch"
+                          HorizontalContentAlignment="Stretch"
+                          BorderThickness="0"
+                          Background="Transparent">
+                    <ListView.ItemTemplate>
+                        <DataTemplate DataType="{x:Type local:INavItem}">
+                            <TextBlock Text="{Binding Header}"
+                                       Padding="20,5,5,5"
+                                       FontSize="14" />
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
 
-                </TreeViewItem>
+                    <ListView.Resources>
+                        <ContextMenu x:Key="TagContextMenu">
+                            <MenuItem Header="重命名"
+                                      Click="RenameTagMenuItem_Click" />
+                            <MenuItem Header="删除标签"
+                                      Click="RemoveTagMenuItem_Click" />
+                        </ContextMenu>
+                    </ListView.Resources>
 
-                <TreeViewItem Header="标签">
-                    <Label Content="●数据结构" />
-                    <Label Content="●算法" />
-                    <Label Content="●Java" />
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="{x:Type ListViewItem}">
+                            <Setter Property="ContextMenu"
+                                    Value="{StaticResource TagContextMenu}" />
+                            <Style.Triggers>
+                                <Trigger Property="IsSelected"
+                                         Value="True">
+                                    <Setter Property="FontWeight"
+                                            Value="Bold" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ListView.ItemContainerStyle>
+                </ListView>
+            </StackPanel>
 
-                </TreeViewItem>
-            </TreeView>
+            <Separator Grid.Column="1"
+                       Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}"
+                       Margin="0"
+                       Background="LightGray"
+                       Visibility="Collapsed" />
 
-            <!-- Right Part: File Area-->
-            <Grid Grid.Column="1"
-                  Background="LightYellow" />
+            <!-- Right Part: File Area -->
+            <Grid Grid.Column="2"
+                  Name="fileAreaGrid">
+                <ListView x:Name="fileList"
+                          ItemsSource="{Binding Files}"
+                          SelectedValue="{Binding SelectedFile}"
+                          SelectionMode="Single"
+                          BorderThickness="0"
+                          MouseDoubleClick="FileList_MouseDoubleClick"
+                          HorizontalContentAlignment="Stretch">
+                    <ListView.ItemTemplate>
+                        <DataTemplate DataType="{x:Type local:FileVM}">
+                            <Grid Height="50"
+                                  MaxWidth="{Binding ElementName=fileAreaGrid, Path=ActualWidth}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Image Grid.Column="0"
+                                       Source="{Binding IconSrc}"
+                                       Margin="8" />
+                                <Grid Grid.Column="1"
+                                      Margin="2">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0"
+                                               Text="{Binding DisplayName}"
+                                               FontSize="16"
+                                               TextWrapping="NoWrap" />
+                                    <!-- area under file name -->
+                                    <StackPanel Grid.Row="1"
+                                                Orientation="Horizontal"
+                                                VerticalAlignment="Center">
+                                        <!-- file size -->
+                                        <StackPanel Orientation="Horizontal"
+                                                    Visibility="{Binding FileSizeVisibility}">
+                                            <TextBlock Text="大小："
+                                                       Foreground="Gray" />
+                                            <TextBlock Text="{Binding FileSize}" />
+                                        </StackPanel>
+                                        <!-- shortcut -->
+                                        <TextBlock Visibility="{Binding ShortcutVisibility}"
+                                                   Foreground="Gray"
+                                                   Text="快捷方式" />
+                                        <!-- tag str -->
+                                        <StackPanel Margin="20,0,0,0"
+                                                    Orientation="Horizontal"
+                                                    Visibility="{Binding TagStrVisibility}">
+                                            <TextBlock Text="标签："
+                                                       Foreground="Gray" />
+                                            <TextBlock Text="{Binding TagStr}" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Grid>
+                                <UniformGrid Grid.Column="2"
+                                             Rows="2"
+                                             Margin="0,0,20,0">
+                                    <StackPanel Orientation="Horizontal"
+                                                VerticalAlignment="Center">
+                                        <TextBlock Text="创建时间："
+                                                   Foreground="Gray" />
+                                        <TextBlock Text="{Binding CreateAt}" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal"
+                                                VerticalAlignment="Center">
+                                        <TextBlock Text="上次访问："
+                                                   Foreground="Gray" />
+                                        <TextBlock Text="{Binding AccessAt}" />
+                                    </StackPanel>
+                                </UniformGrid>
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+
+                    <ListView.Resources>
+                        <ContextMenu x:Key="FileContextMenu">
+                            <MenuItem Header="打开"
+                                      Click="OpenFileMenuItem_Click" />
+                            <MenuItem Header="打开文件位置"
+                                      Click="ShowFileInExplorerMenuItem_Click" />
+                            <MenuItem Header="修改"
+                                      Click="EditFileMenuItem_Click" />
+                            <MenuItem Header="移入回收站"
+                                      Click="DeleteFileToRecycleBinMenuItem_Click" />
+                            <MenuItem Header="彻底删除"
+                                      Click="DeleteFileMenuItem_Click" />
+                        </ContextMenu>
+                    </ListView.Resources>
+
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="{x:Type ListViewItem}">
+                            <Setter Property="ContextMenu"
+                                    Value="{StaticResource FileContextMenu}" />
+                        </Style>
+                    </ListView.ItemContainerStyle>
+                </ListView>
+            </Grid>
 
         </Grid>
 
-        <!--<Image HorizontalAlignment="Left"
-               Height="21"
-               Margin="163,16,0,0"
-               VerticalAlignment="Top"
-               Width="18"
-               Source="../Icon/Search.png"
-               RenderTransformOrigin="0.896,0.323"
-               Grid.Column="1" />
-        <Image HorizontalAlignment="Left"
-               Height="26"
-               Margin="41,11,0,0"
-               VerticalAlignment="Top"
-               Width="37"
-               Source="../Icon/refresh.jpg" />
-        <Image HorizontalAlignment="Left"
-               Height="26"
-               Margin="10,11,0,0"
-               VerticalAlignment="Top"
-               Width="23"
-               Source="../Icon/home.jpg" />
-
-        <Image Name="Tag"
-               Margin="69,11,4,426.4"
-               RenderTransformOrigin="0.122,1.04"
-               Source="../Icon/tag.jpg">
-            <Image.ContextMenu>
-                <ContextMenu Name="TagContextMenu"
-                             StaysOpen="true">
-                    <MenuItem Header="增加标签"
-                              Click="AddFile_OnClick" />
-                    <MenuItem Header="修改标签" />
-                    <MenuItem Header="删除标签" />
-                    <MenuItem Header="Recent Files">
-                        <MenuItem Header="ReadMe.txt" />
-                        <MenuItem Header="Schedule.xls" />
-                    </MenuItem>
-                </ContextMenu>
-            </Image.ContextMenu>
-        </Image>-->
-
     </Grid>
-</Window>
+</pu:WindowX>

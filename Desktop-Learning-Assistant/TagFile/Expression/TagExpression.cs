@@ -34,11 +34,11 @@ namespace DesktopLearningAssistant.TagFile.Expression
             var dict = new Dictionary<int, HashSet<string>>();
             foreach (var relation in relations)
             {
-                int id = relation.FileItemId;
-                string tag = relation.TagName;
-                if (!dict.ContainsKey(id))
-                    dict[id] = new HashSet<string>();
-                dict[id].Add(tag);
+                int fileId = relation.FileItemId;
+                string tagName = relation.Tag.TagName;
+                if (!dict.ContainsKey(fileId))
+                    dict[fileId] = new HashSet<string>();
+                dict[fileId].Add(tagName);
             }
             var files = new List<QueryFile>();
             foreach (var kv in dict)
@@ -65,9 +65,10 @@ namespace DesktopLearningAssistant.TagFile.Expression
             var files = ToFiles(relations);
             var root = Parse(Tokenize(expression)); // AST 的根节点
             var idList = new List<int>(); // 符合查询结果的 Id 的列表
+            //若为空树，则添加所有文件
             foreach (var file in files)
             {
-                if (root.Value(file))
+                if (root == null || root.Value(file))
                     idList.Add(file.Id);
             }
             return idList;

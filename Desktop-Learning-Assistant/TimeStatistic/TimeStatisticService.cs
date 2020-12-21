@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Media.Media3D;
-//using Castle.Core.Internal;
 using DesktopLearningAssistant.Configuration;
 using DesktopLearningAssistant.TimeStatistic.Model;
 
@@ -145,6 +144,25 @@ namespace DesktopLearningAssistant.TimeStatistic
         public List<UserActivity> GetKilledUserActivities()
         {
             return TDManager.KilledActivities;
+        }
+        
+        /// <summary>
+        /// 返回所有出现过的软件名
+        /// </summary>
+        /// <returns></returns>
+        public List<string> GetSoftwareNames()
+        {
+            List<string> softwareNames = new List<string>();
+            lock(TDManager)
+            {
+                List<UserActivityPiece> userActivityPieces = TDManager.UserActivityPieces;
+                foreach (var uap in userActivityPieces)
+                {
+                    if (softwareNames.Contains(uap.Name)) continue;
+                    softwareNames.Add(uap.Name);
+                }
+            }
+            return softwareNames;
         }
 
         #endregion

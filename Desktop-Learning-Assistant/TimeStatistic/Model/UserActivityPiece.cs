@@ -15,6 +15,11 @@ namespace DesktopLearningAssistant.TimeStatistic.Model
         #region 公共属性
 
         /// <summary>
+        /// ID，自增，不需要手动设置
+        /// </summary>
+        public long Id { get; set; }
+
+        /// <summary>
         /// 活动片的名称
         /// </summary>
         public string Name { get; set; }
@@ -33,6 +38,11 @@ namespace DesktopLearningAssistant.TimeStatistic.Model
         /// 活动片的结束时间
         /// </summary>
         public DateTime CloseTime { get; set; }
+
+        /// <summary>
+        /// 该活动片是否已结束
+        /// </summary>
+        public bool Finished { get; set; }
 
         /// <summary>
         /// 活动片的时间跨度
@@ -71,6 +81,12 @@ namespace DesktopLearningAssistant.TimeStatistic.Model
         {
             return base.GetHashCode();
         }
+
+        public override string ToString()
+        {
+            return $"{Id}\t{Name}\t{Detail}\t{StartTime}\t{CloseTime}\t{Finished}";
+        }
+
         #endregion
 
     }
